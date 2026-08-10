@@ -1,3 +1,5 @@
+import { compileSafeRegex } from "../util/safe-regex.ts";
+
 export type ApprovalDecision = "require_approval" | "deny";
 
 export interface ToolApproval {
@@ -163,7 +165,7 @@ export function parseToolDescriptor(raw: string, sourcePath: string): ToolDescri
   for (const [i, approval] of (out.approvals ?? []).entries()) {
     const compiled = compileApproval(binary, approval);
     try {
-      new RegExp(compiled.pattern, "i");
+      compileSafeRegex(compiled.pattern, "i");
     } catch (e) {
       throw new Error(`${sourcePath}: approvals[${i}] is not a valid regex: ${(e as Error).message}`, { cause: e });
     }
@@ -612,7 +614,7 @@ export function compileApproval(binary: string, a: ToolApproval): { pattern: str
   const decision: ApprovalDecision = a.decision ?? "require_approval";
   if (a.pattern !== undefined) return { pattern: a.pattern, decision };
   const words = (a.command ?? "").trim().split(/\s+/).filter(Boolean).map(escapeRegex);
-  return { pattern: `\\b${[escapeRegex(binary), ...words].join("\\s+")}(?:\\b|(?=\\s|$))`, decision };
+  return { pattern: `\\b${[escapeRegex(binary), ...words].join("\\s+")}(?:\\b|\\s|$)`, decision };
 }
 
 export function interpolateSplitEnv(
