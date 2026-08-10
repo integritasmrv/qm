@@ -5,8 +5,8 @@ the deployment engine; this repository owns the organization-specific config,
 sandbox layer, provider coordinates, and generated Slack manifests.
 
 The task is complete only after the administrator can sign in, receive a real
-web response, and, when Slack is requested, mention the bot in a test channel
-and receive a response.
+web response with a generated sidebar title, and, when Slack is requested,
+mention the bot in a test channel and receive a response.
 
 ## 1. Collect choices and authorization
 
@@ -227,7 +227,10 @@ place a deployment key belongs, and `qm secrets push` moves it without printing
 it.
 
 Open `webUiUrl`, sign in as the seeded administrator, send a message, and
-receive a real model response. Ask the agent to create a fresh UUID in
+receive a real model response. Use a specific request rather than a greeting,
+then confirm its generated sidebar title replaces the `Web chat` fallback. A
+missing title leaves the deployment incomplete; inspect the core error log
+before continuing. Ask the agent to create a fresh UUID in
 `/root/workspace/qm-computer-proof.txt`, then use the provider reference's
 independent proof to verify that UUID outside the model transcript.
 
@@ -267,7 +270,7 @@ Return:
 - provider, account or organization, and region;
 - the base model provider and where its key lives — the deployment `.env` or the
   Admin page — so the operator knows what to rotate and where;
-- pass/fail for health, sign-in, web chat, agent-computer proof, connector
+- pass/fail for health, sign-in, web chat, generated chat title, agent-computer proof, connector
   visibility, user OAuth, Slack reply, live check, conformance, and an
   idempotent deployment rerun;
 - `npm exec qm -- status`, logs, rollback, and teardown commands;
