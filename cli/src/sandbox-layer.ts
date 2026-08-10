@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { JUNK_FILE, deploymentLayerBundle } from "./deployment-layer.ts";
 import { errMessage } from "./log.ts";
+import { compileSafeRegex } from "./safe-regex.ts";
 
 export type ApprovalDecision = "require_approval" | "deny";
 
@@ -183,6 +184,11 @@ export function parseToolDescriptor(raw: string, sourcePath: string): ToolDescri
       throw new Error(
         `${sourcePath}: approvals[${i}] pattern is too slow to evaluate — it may cause catastrophic backtracking`,
       );
+    }
+    try {
+      compileSafeRegex(compiled.pattern, "i");
+    } catch (e) {
+      throw new Error(`${sourcePath}: approvals[${i}] is not a valid regex: ${errMessage(e)}`, { cause: e });
     }
     if (approval.pattern !== undefined && !rawApprovalTargetsTool(binary, approval.pattern)) {
       throw new Error(
@@ -623,7 +629,7 @@ export function compileApproval(binary: string, a: ToolApproval): { pattern: str
   const decision: ApprovalDecision = a.decision ?? "require_approval";
   if (a.pattern !== undefined) return { pattern: a.pattern, decision };
   const words = (a.command ?? "").trim().split(/\s+/).filter(Boolean).map(escapeRegex);
-  const pattern = `\\b${[escapeRegex(binary), ...words].join("\\s+")}(?:\\b|(?=\\s|$))`;
+  const pattern = `\\b${[escapeRegex(binary), ...words].join("\\s+")}(?:\\b|\\s|$)`;
   return { pattern, decision };
 }
 
